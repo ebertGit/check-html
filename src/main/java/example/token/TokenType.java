@@ -3,6 +3,7 @@ package example.token;
 public enum TokenType {
     StartingTag,
     ClosingTag,
+    SelfClosingTag,
     Document,
     Attribute,
     Value,

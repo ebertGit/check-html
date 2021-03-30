@@ -6,11 +6,13 @@ public class HtmlToken {
 
     private TokenType type;
 
+    private String text = "";
+
     private boolean isCss = false;
 
     private boolean isScript = false;
 
-    private String text = "";
+    private boolean startingTagAdded = false;
 
     public String getName() {
         return name;
@@ -26,6 +28,14 @@ public class HtmlToken {
 
     public void setType(TokenType type) {
         this.type = type;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
     }
 
     public boolean isCss() {
@@ -44,11 +54,11 @@ public class HtmlToken {
         isScript = flag;
     }
 
-    public String getText() {
-        return text;
+    public boolean isStartingTagAdded() {
+        return startingTagAdded;
     }
 
-    public void setText(String text) {
-        this.text = text;
+    public void setStartingTagAdded(boolean startingTagAdded) {
+        this.startingTagAdded = startingTagAdded;
     }
 }

@@ -8,7 +8,7 @@ public enum DfaState {
     Initial,
     ClosingTag,
     ClosingTag_1,
-    ClosingSelf,
+    SelfClosingTag,
     Element,
     Attribute,
     Value,

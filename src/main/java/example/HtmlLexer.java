@@ -1,3 +1,4 @@
+package example;
 
 import example.enums.DfaState;
 import example.token.HtmlToken;
@@ -5,7 +6,6 @@ import example.token.TokenType;
 
 import java.io.CharArrayReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Stack;
 
 /**
@@ -226,8 +226,11 @@ public class HtmlLexer {
                         break;
                     case Element:
                         if (ch == '>') {
-                            tokenText.append(ch);
+                            tokenText.append(ch);   // #initToken()メソッド内の属性(Attribute)初期化を判断用
                             state = initToken(ch);
+                        } else if (ch == '/') {
+                            state = DfaState.SelfClosingTag;
+                            tokenText.append(ch);   // セルフクロージング
                         } else if (!isBlank(ch)) {
                             tokenText.append(ch);   // 空白或いは、「>」まで続く
                         } else {
@@ -265,16 +268,23 @@ public class HtmlLexer {
                         if (ch == '>') {
                             state = initToken(ch);
                         } else if (ch == '/') {
-                            state = DfaState.ClosingSelf;
+                            state = DfaState.SelfClosingTag;
+                            token.setStartingTagAdded(true);  // タグの属性のため、所属する開始タグはすでにスタックに入れ済み。
+                            tokenText.append(ch);
                         } else {
                             tokenText.append(ch);
                         }
                         break;
-                    case ClosingSelf:
+                    case SelfClosingTag:
                         if (ch == '>') {
-                            state = initToken(ch);
+                            token.setType(TokenType.SelfClosingTag);
+                            state = initToken(ch);   // セルフクロージング
                         } else {
-                            state = DfaState.Attribute;
+                            if (token.getType() == TokenType.StartingTag) {
+                                state = DfaState.Element;
+                            } else {
+                                state = DfaState.Attribute;
+                            }
                             tokenText.append(ch);
                         }
                         break;
@@ -445,7 +455,7 @@ public class HtmlLexer {
             // ログに出力する開始タグを見やすいように、後ろに「>」をつけて出力する。
             String startTag = htmlTagStack.pop().getText();
             startTag = startTag.endsWith(">") ? startTag : startTag + ">";
-            System.out.printf("該開始タグとペアする閉じるタグが存在しません:「%s」\n", startTag);
+            System.out.printf("該開始タグとペアする閉じるタグが存在しません：%s\n", startTag);
         }
         System.out.println("チェック完了");
     }
@@ -484,10 +494,26 @@ public class HtmlLexer {
                     startTag = startTag.endsWith(">") ? startTag : startTag + ">";
                     System.out.printf("ペア成功したタグ：%s - %s\n", startTag, token.getText());
                 } else {
-                    System.out.printf("該閉じるタグとペアする開始タグが存在しません:「%s」\n", token.getText());
+                    // TODO: ペアできるまで、既存の開始タグを全部チェック
+                    // TODO: 2つのスタックを利用
+                    // TODO: ペアできる場合、途中の開始タグは、対応する閉じるタグが存在しないと扱う
+                    // TODO: ペアできない場合、当該閉じるタグに対応する開始タグが存在しないと見なす
+                    System.out.printf("該閉じるタグとペアする開始タグが存在しません：%s\n", token.getText());
                 }
             } else if (token.getType() == TokenType.UnknownItem) {
                 System.out.printf("未知項目：「%s」\n", token.getText());
+            } else if (token.getType() == TokenType.SelfClosingTag) {
+                String selfClosingTag = "";
+                if (token.isStartingTagAdded()) {
+                    selfClosingTag = htmlTagStack.pop().getText();
+                    selfClosingTag = selfClosingTag.substring(0, selfClosingTag.length() - 1) + " />";
+                } else {
+                    selfClosingTag = token.getText() + ">";
+                }
+                // ログに出力するためにフォーマット。
+//                selfClosingTag = selfClosingTag.endsWith("/") ? selfClosingTag + ">" : selfClosingTag + " />";
+                System.out.println("セルフクロージング(self-closing)タグ：" + selfClosingTag);
+                // TODO: 対応する開始タグをポップする。
             }
 
             // 初期化する。
